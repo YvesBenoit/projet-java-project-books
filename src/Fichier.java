@@ -67,18 +67,29 @@ public class Fichier {
 
     }
 
-    public static void addFile(ArrayList<String> listOfFiles) {
+    public static String addFile(ArrayList<String> listOfFiles) {
 
-        String fileName = ToolBox.getStringOnStdIn("Fichier à ajouter");
+        String fileName = ToolBox.getStringOnStdIn("\nFichier à ajouter");
 
-        if (Files.exists(Path.of(fileName))) {      // verifie si la string récupérée correspond à un fichier
-            if (fileName.indexOf("_TRAITE") != -1) {    //  verifie que "_TRAITE" est ans le nom du fichier
-                listOfFiles.add(fileName);
-                System.out.println("Fichier : "+fileName+" pris en compte.");
+        if (fileName.equals("exit")) {
+            System.out.println("\nDemande de quitter le programme prise en compte");
+        } else {
+            if (Files.exists(Path.of(fileName))) {      // verifie si la string récupérée correspond à un fichier
+                if (fileName.indexOf("_TRAITE") != -1) {    //  verifie que "_TRAITE" est ans le nom du fichier
+                    if (!listOfFiles.contains(fileName)) {   // verifie que le fichier saisi n'est pas deja dans la liste
+                        listOfFiles.add(fileName);
+                        System.out.println("\nFichier : " + fileName + " pris en compte.");
+                    } else {
+                        System.out.println("\nAtt : --> Fichier : " + fileName + " non pris en compte.  (existe déjà dans la liste !) ");
+                    }
+                } else {
+                    System.out.println("\nAtt : --> Fichier : " + fileName + " non pris en compte.  (n'a pas été pré-traité !) ");
+                }
+            } else {
+                System.out.println("\nAtt : --> Fichier : " + fileName + " non pris en compte.  (n'existe pas !) ");
             }
         }
-        System.out.println("Att : --> Fichier : "+fileName+" non pris en compte.  (n'existe pas ou n'a pas été pré-traité !) ");
-
+        return fileName;
     }
 
     public static void deleteFile(ArrayList<String> listOfFiles) {
@@ -87,7 +98,7 @@ public class Fichier {
         while (i < 1 || i > listOfFiles.size()) {
             i = ToolBox.getIntOnStdIn("Numero du fichier à supprimer");
         }
-        listOfFiles.remove(i);
+        listOfFiles.remove(i - 1);
     }
 
     public static String chooseFile(ArrayList<String> listOfFiles) {
@@ -125,6 +136,12 @@ public class Fichier {
 
         // load du tous les fichiers de la liste dans un tableau de HashMaps sauf le fichier sélectionne (<==> à comparer au autres) que je charge dans une HMap à part.
         HashMap<String, Integer>[] listHMsToCompare = new HashMap[listOfFiles.size() - 1];   //tableau de HMaps d'un élément de moins que le nombre de fichiers contenus dans la liste de fichiers
+        boolean[] wordNotFoundInHMToCompare = new boolean[listOfFiles.size() - 1];
+        for (int i = 0; i < listOfFiles.size() - 1; ++i) {
+            wordNotFoundInHMToCompare[i] = false;
+        }
+        boolean wordNotFound = false;
+
         HashMap<String, Integer> selectedHM = new HashMap<String, Integer>();     // HMap du fichier sélectionné.
 
         ArrayList<String> listUniqueWords = new ArrayList<>();
@@ -137,19 +154,32 @@ public class Fichier {
                 listHMsToCompare[j++] = readFileToHashMap(listOfFiles.get(i));    // je charge la HMap du fichier en cours dans le tableau de HMaps
             }
         }
-
-        // itération pour n'afficher que le nombre d'éléments demandés
-        Iterator itV = selectedHM.values().iterator();
+        //Iterator itV = selectedHM.values().iterator();
         Iterator itK = selectedHM.keySet().iterator();
+        for (int i = 0; i < listHMsToCompare.length; i++) {   //boucle sur le nombre de livre à comparer
 
-        while (itV.hasNext()) {
-            for (int i = 0; i < listHMsToCompare.length; ++i) {
+            while (itK.hasNext()) {
                 if (!listHMsToCompare[i].containsKey(itK.next())) {    // si je ne retrouve pas la clef issue du fichier à comparer dans la HM courante des HM non sélectionnées
-                    listUniqueWords.add((String) itK.next());                   // je stocke cette clef unique  (sinon je ne fais rien )
+                    wordNotFoundInHMToCompare[i] = true;                            // je positionne le flag correspondant a vrai
                 }
-
             }
         }
+        for (int k = 0; k < listHMsToCompare.length; ++k) {
+            wordNotFound = wordNotFound & wordNotFoundInHMToCompare[k];
+        }
+
+        if (wordNotFound) {
+            listUniqueWords.add((String) itK.next());
+        }
+
+//        Iterator itV2 = myHMSorted.values().iterator();
+        Iterator itK2 = listUniqueWords.iterator();
+
+        while (itK2.hasNext()) {
+            System.out.print(itK.next()+"\t" );
+        }
+        System.out.println();
+
         return listUniqueWords;
     }
 
