@@ -62,14 +62,23 @@ public class Fichier {
 
     public static void listFile(ArrayList<String> listOfFiles) {
         for (int i = 0; i < listOfFiles.size(); ++i) {
-            System.out.println(i + " : " + listOfFiles.get(i));
+            System.out.println((i + 1) + " : " + listOfFiles.get(i));
         }
 
     }
 
     public static void addFile(ArrayList<String> listOfFiles) {
 
-        listOfFiles.add(ToolBox.getStringOnStdIn("Fichier à ajouter"));
+        String fileName = ToolBox.getStringOnStdIn("Fichier à ajouter");
+
+        if (Files.exists(Path.of(fileName))) {      // verifie si la string récupérée correspond à un fichier
+            if (fileName.indexOf("_TRAITE") != -1) {    //  verifie que "_TRAITE" est ans le nom du fichier
+                listOfFiles.add(fileName);
+                System.out.println("Fichier : "+fileName+" pris en compte.");
+            }
+        }
+        System.out.println("Att : --> Fichier : "+fileName+" non pris en compte.  (n'existe pas ou n'a pas été pré-traité !) ");
+
     }
 
     public static void deleteFile(ArrayList<String> listOfFiles) {
@@ -87,13 +96,14 @@ public class Fichier {
         while (i < 1 || i > listOfFiles.size()) {
             i = ToolBox.getIntOnStdIn("Numero du fichier à selectionner");
         }
-        return listOfFiles.get(i);
+        System.out.println("vous avez choisi :" + listOfFiles.get(i - 1));
+        return listOfFiles.get(i - 1);
     }
 
 
-    public static void topMots(HashMap<String,Integer> myHM) {
+    public static void topWords(HashMap<String, Integer> myHM) {
 
-         // tri de la table
+        // tri de la table
         HashMap<String, Integer> myHMSorted = ToolBox.sortWithVDecrease(myHM);
 
         // saisie du nombre d'éléments de la hash table à afficher
@@ -109,6 +119,38 @@ public class Fichier {
                 break;
             }
         }
+    }
+
+    public static ArrayList<String> uniqueWords(String selectedFile, ArrayList<String> listOfFiles) {
+
+        // load du tous les fichiers de la liste dans un tableau de HashMaps sauf le fichier sélectionne (<==> à comparer au autres) que je charge dans une HMap à part.
+        HashMap<String, Integer>[] listHMsToCompare = new HashMap[listOfFiles.size() - 1];   //tableau de HMaps d'un élément de moins que le nombre de fichiers contenus dans la liste de fichiers
+        HashMap<String, Integer> selectedHM = new HashMap<String, Integer>();     // HMap du fichier sélectionné.
+
+        ArrayList<String> listUniqueWords = new ArrayList<>();
+
+        int j = 0;    // compteur pour gérer le tableau de HMaps à comparer. (augmente comme l'indice de boucle (i) sauf lorsque je traite le fichier selectionné)
+        for (int i = 0; i < listOfFiles.size(); i++) {
+            if (selectedFile.equals(listOfFiles.get(i))) {    // si on s'apprete à traiter le fichier sélectionné
+                selectedHM = readFileToHashMap(listOfFiles.get(i));  // je le charge dans la HMap sélectionnée
+            } else {                                          // sinon  (on s'apprete à traiter un des fichiers à comparer au fichier sélectionné
+                listHMsToCompare[j++] = readFileToHashMap(listOfFiles.get(i));    // je charge la HMap du fichier en cours dans le tableau de HMaps
+            }
+        }
+
+        // itération pour n'afficher que le nombre d'éléments demandés
+        Iterator itV = selectedHM.values().iterator();
+        Iterator itK = selectedHM.keySet().iterator();
+
+        while (itV.hasNext()) {
+            for (int i = 0; i < listHMsToCompare.length; ++i) {
+                if (!listHMsToCompare[i].containsKey(itK.next())) {    // si je ne retrouve pas la clef issue du fichier à comparer dans la HM courante des HM non sélectionnées
+                    listUniqueWords.add((String) itK.next());                   // je stocke cette clef unique  (sinon je ne fais rien )
+                }
+
+            }
+        }
+        return listUniqueWords;
     }
 
 

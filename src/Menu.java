@@ -11,7 +11,7 @@ public class Menu {
     private static int maxLevel = 3;         // profondeur maximale de menus
     private static int[] userChoice = new int[maxLevel];       // choix de l'utilisateur (issus de stdIn)
     private static ArrayList<String> listOfFiles = new ArrayList<>();
-    private static String selectedFile ="";
+    private static String selectedFile = "";
     private static ArrayList<String> bookInArrayList = new ArrayList<>();
     private static HashMap<String, Integer> bookInHashMap = new HashMap<>();
 
@@ -24,7 +24,9 @@ public class Menu {
 //        ArrayList<String> listOfFiles = new ArrayList<>();
         for (int i = 0; i < args.length; ++i) {
             if (Files.exists(Path.of(args[i]))) {      // verifie si la string récupérée correspond à un fichier
-                listOfFiles.add(args[i]);
+                if (args[i].indexOf("_TRAITE")!=-1) {    //  verifie que "_TRAITE" est ans le nom du fichier
+                    listOfFiles.add(args[i]);
+                }
             }
         }
 
@@ -85,7 +87,9 @@ public class Menu {
         System.out.println("[1] Afficher le nombre de lignes du fichier");
         System.out.println("[2] Afficher le nombre de mots du fichier");
         System.out.println("[3] Afficher le Top des mots du fichier");
-        System.out.println("[4] Retour");
+        System.out.println("[4] Afficher les mots uniquement dans ce fichier");
+        System.out.println("[5] Afficher TODO");
+        System.out.println("[6] Retour");
         System.out.println();
     }
 
@@ -101,9 +105,15 @@ public class Menu {
                 }
                 break;
             case 1:
-            case 2:
                 if (userChoiceInMenu < 1 || userChoiceInMenu > 4) {
                     System.out.println("--- Saisie invalide 2 ---");
+                } else {
+                    res = true;
+                }
+                break;
+            case 2:
+                if (userChoiceInMenu < 1 || userChoiceInMenu > 6) {
+                    System.out.println("--- Saisie invalide 3 ---");
                 } else {
                     res = true;
                 }
@@ -119,7 +129,8 @@ public class Menu {
     public static boolean selectedAction(int action) {
         int res = -1;
 //        System.out.println("action : " +action);
-        switch (action) {
+        switch (action) {   // le case se lit comme suit : le nombre de digit de action donne le niveau de menu sur lequel l'action est déclenchée
+            // et se lit de droite à gauche  (ie : 634 signifie choix 4 au 1er menu ; choix 3 au 2eme menu et choix 6 au 3eme menu
             case 1:
             case 14:
                 Fichier.listFile(listOfFiles);
@@ -127,36 +138,50 @@ public class Menu {
             case 2:
                 Fichier.addFile(listOfFiles);
                 break;
-            case 3:
+            case 3:    // supprime l'entrée de la liste (ne supprime pas physiquement le fichier)
                 Fichier.deleteFile(listOfFiles);
                 break;
             case 4:     //descendre d'un niveau de menu
-            case 34:
                 ++level;
                 break;
-            case 5:   // sortir du programme
+            case 34:   // descendre au niveau des traitements sur un fichier ==> le fichier doit être sélectionné !
+                if (selectedFile.length() != 0) {
+                    ++level;
+                    break;
+                } else {
+                    System.out.println("ATT : ------>   Vous n'avez pas selectionné de fichier !!!!!");
+                    System.out.println("ATT : ------>   Merci de selectionner un fichier à traiter !");
+                    action = 24;       // Rem : il n'y a pas de break dans ce cas ==> on force à l'action de selection d'un livre et on continue en séquence..
+                                       // ==> Attention à l'ordre des 'case'
+                }
+                break;
+            case 5:   // sortir du programme   (true sera récupéré dans le booleen getOut permettant de ne plus itérer indéfiniment sur des saisies utilisateur.
                 return true;
-            case 24:
+            case 24:    // selection d'un book pour utilisation sur les action du 3eme menu
                 bookInHashMap.clear();
                 bookInArrayList.clear();
-                selectedFile = Fichier.chooseFile(listOfFiles);
-                bookInArrayList = Fichier.readFileToArrayList(selectedFile);
-                bookInHashMap = Fichier.readFileToHashMap(selectedFile);
+                selectedFile = Fichier.chooseFile(listOfFiles);  // selection d'un livre pour utilisation sur les action du 3eme menu
+                bookInArrayList = Fichier.readFileToArrayList(selectedFile);  // chargement du livre pour utilisation brute
+                bookInHashMap = Fichier.readFileToHashMap(selectedFile);      // chargement du livre avec dédoublonnage des mots et comptabilisation des occurences de chacun d'eux.
                 break;
             case 44:     //remonter d'un niveau de menu
-            case 434:
-                userChoice[level] = 0;
-                --level;
+            case 634:
+                userChoice[level--] = 0;   // suppression du choix utilisateur sur le menu quitté , Puis modification de l'indicateur de profondeur de menu
                 break;
             case 134:
-                System.out.println(selectedFile +" contient " + bookInArrayList.size() + " lignes\n");
+                System.out.println(selectedFile + " contient " + bookInArrayList.size() + " lignes\n");
                 break;
             case 234:
-                System.out.println(selectedFile +" contient " + bookInHashMap.size() + " mots différents \n");
-
+                System.out.println(selectedFile + " contient " + bookInHashMap.size() + " mots différents \n");
                 break;
-            case 334:
-                Fichier.topMots(bookInHashMap);
+            case 334:    // affichage des mots les plus utilisés d'un livre
+                Fichier.topWords(bookInHashMap);
+                break;
+            case 434:    //afficher les mots qui sont présents seulement dans le livre sélectionné et dans aucun des autres livres de la liste
+                System.out.println(Fichier.uniqueWords(selectedFile,listOfFiles));
+                break;
+            case 534:
+                System.out.println("-------------->   Sorry still to do !!!!!!!!!!");
                 break;
 
             default:
